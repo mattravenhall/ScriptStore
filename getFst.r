@@ -36,7 +36,7 @@ calcPopStats <- function(popDat, pops) {
 		# Calculate B & H stats for that population
 		popX.B <- rowSums(popX)/dim(popX)[2]
 		popX.A <- 1 - popX.B
-		popX.H <- ((1-popX.B) + popX.A) / 2
+		popX.H <- 2*popX.A*popX.B
 
 		# Add A, B & H stats to output dataframe
 		# Format as population per column & snp/gene per row
