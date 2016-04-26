@@ -41,13 +41,16 @@ calcPopStats <- function(popDat, pops) {
 		# Add A, B & H stats to output dataframe
 		# Format as population per column & snp/gene per row
 		# NB: These are being assigned globally
-		out.A <<- cbind(out.A, tmp=popX.A)
-		names(out.A)[length(names(out.A))] <<- i
-		out.B <<- cbind(out.B, tmp=popX.B)
-		names(out.B)[length(names(out.B))] <<- i
-		out.H <<- cbind(out.H, tmp=popX.H)
-		names(out.H)[length(names(out.H))] <<- i
+		out.A <- cbind(out.A, tmp=popX.A)
+		dimnames(out.A)[[2]][which(pops==i)] <- i
+		out.B <- cbind(out.B, tmp=popX.B)
+		dimnames(out.B)[[2]][which(pops==i)] <- i
+		out.H <- cbind(out.H, tmp=popX.H)
+		dimnames(out.H)[[2]][which(pops==i)] <- i
 	}
+	assign('out.A', out.A, envir=.GlobalEnv)
+	assign('out.B', out.B, envir=.GlobalEnv)
+	assign('out.H', out.H, envir=.GlobalEnv)
 }
 
 # Population group calculations
