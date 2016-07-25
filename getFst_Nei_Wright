@@ -38,7 +38,7 @@ calcStats <- function(inData, pops) {
   list(out.A, out.n)
 }
 
-calcFstWeir <- function(A, n) {
+calcFstWright <- function(A, n) {
   # Calculates Fst for one SNP
   # A = array of allele A frequencies for each population
   # n = array of population sizes in same order as A
@@ -84,7 +84,7 @@ calcFst <- function(inData, pops, groups=NULL, pairwise=T, Nei=T) {
       n <- unlist(stats[2])
 
       if (Nei) { Fst <- apply(A, 1, calcFstNei) }
-      else { Fst <- apply(A, 1, calcFstWeir, n=n) } # e.g. if two, pairwise
+      else { Fst <- apply(A, 1, calcFstWright, n=n) } # e.g. if two, pairwise
 
       output <- data.frame(PopA=pairs[1,],PopB=pairs[2,],Fst,stringsAsFactors=F)
 
