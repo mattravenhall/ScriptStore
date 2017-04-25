@@ -8,3 +8,6 @@ Useful scripts without a specific home.
 #### Tajima's D
 **getTajimasD.r**: R implementation, limited to small datasets.
 **getTajD.py**: Python 3 implementation with inherent multi-threading.
+
+#### Format Conversion
+**vcfToSNPs.py**: For pulling raw SNP calls from a .vcf file.
