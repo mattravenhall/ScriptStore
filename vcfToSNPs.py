@@ -23,4 +23,4 @@ for chrom in range(1,nChromosomes+1):
 
     # map, rows as SNPs, columns as chr-ID-bp-bp
     Map = pd.DataFrame(data={'A':df.ix[:,0],'B':'ID_'+df.ix[:,1],'C':df.ix[:,1],'D':df.ix[:,1]})
-    Map.to_csv('outName+chrom+'.map',sep=' ',header=False,index=False)
+    Map.to_csv(outName+chrom+'.map',sep=' ',header=False,index=False)
