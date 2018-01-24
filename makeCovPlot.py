@@ -11,30 +11,32 @@ import subprocess
 import pandas as pd
 import matplotlib.pyplot as plt
 
-covStore = '/path/to/full/cov/files/'
+plt.rc('font', size=7)
+plt.rc('xtick', labelsize=5)
+
+covStore = '/path/to/coverage/'
 outDirectory = './'
 threads = 5
 title = ''
+plots = []
 filename='test'
 neighbours=[]
-figureX = 15
-figureY = 2
 
 if len(sys.argv) == 1 or sys.argv[1].lower() == 'help':
-	print('Coverage Plotter\n'+
-	'Required:\n'+
+	print('\n\033[92mCoverage Plotter\033[0m\n'+
+	'\033[94mRequired:\n'+
 	'\t--region=chromosome:basepair-basepair\n'+
 	'\t--samples=ID,ID,ID,ID\n'+
-	'\t--genes=basepair-basepair,basepair-basepair\n'+
-	'\t--SVs=basepair-basepair,basepair-basepair\n'+
 	'Optional:\n'+
+	'\t--genes=basepair-basepair,basepair-basepair\n'+
+	'\t--SVs=/path/to/variants\n'+
+	'\t--SVModel=SV model type\n'+
 	'\t--threads=int\n'+
 	'\t--covStore=/path/to/dir\n'+
 	'\t--title=string\n'+
+	'\t--plots=string,string,string\n'+
 	'\t--filename=string\n'+
-	'\t--figureX=int [15]\n'+
-	'\t--figureY=int [2]\n'+
-	'\t--neighbours=basepair-basepair,basepair-basepair\n')
+	'\t--neighbours=/path/to/annotation\033[0m\n')
 	sys.exit()
 
 def checkArg(valueGiven, givenArg, isBool=False):
@@ -65,9 +67,21 @@ for arg in sys.argv[1:]:
 	elif arg.startswith('--genes'):
 		genes = checkArg(arg, '--genes').split(',')
 	elif arg.startswith('--neighbours'):
-		neighbours = checkArg(arg, '--neighbours').split(',')
+		neighbours = checkArg(arg, '--neighbours')
+		if os.path.isfile(neighbours):
+			neighbours = pd.read_table(neighbours)
+		else:
+			print("Neighbours file doesn't exist.")
+			sys.exit()
 	elif arg.startswith('--SVs'):
-		SVs = checkArg(arg, '--SVs').split(',')
+		SVs = checkArg(arg, '--SVs')
+		if os.path.isfile(SVs):
+			SVs = pd.read_csv(SVs)
+		else:
+			print("SV file doesn't exist.")
+			sys.exit()
+	elif arg.startswith('--SVModel'):
+		SVModel = checkArg(arg, '--SVModel')
 	elif arg.startswith('--threads'):
 		threads = int(checkArg(arg, '--threads'))
 	elif arg.startswith('--covStore'):
@@ -84,10 +98,8 @@ for arg in sys.argv[1:]:
 		title = checkArg(arg, '--title')
 	elif arg.startswith('--filename'):
 		filename = checkArg(arg, '--filename')
-	elif arg.startswith('--figureX'):
-		figureX = int(checkArg(arg, '--figureX'))
-	elif arg.startswith('--figureY'):
-		figureY = int(checkArg(arg, '--figureY'))
+	elif arg.startswith('--plots'):
+		plots = checkArg(arg, '--plots').split(',')
 	else:
 		print('\033[91mArgument {0} not recognised.\033[0m\n'.format(arg))
 		sys.exit()
@@ -99,13 +111,19 @@ for var in ['region', 'samples', 'genes', 'SVs']:
 if len(missingVar) > 0:
 	print('Missing required variables: {0}'.format(missingVar))
 	sys.exit()
+if len(plots) != 0 and len(plots) != len(samples):
+	print('Incorrect number of plot y labels: {0} labels for {1} samples.'.format(len(plots), len(samples)))
+	sys.exit()
+
+SVs = SVs[(SVs.Chromosome == chromosome) &(SVs.Start < int(regionEnd)) & (SVs.End > int(regionStart)) & (SVs.Model == SVModel)]
+neighbours = neighbours[(neighbours.Chromosome == chromosome) & (neighbours.Start < int(regionEnd)) & (neighbours.End > int(regionStart))]
 
 print('Running Coverage Pipeline For:')
 print(' Region: {0} ({1:,} bp)'.format(region,int(regionEnd)-int(regionStart)))
 print(' Sample/s: {0}'.format(samples))
 print(' Gene/s: {0}'.format(genes))
-print(' SV/s: {0}'.format(SVs))
-print(' Neighbouring Genes: {0}'.format(neighbours))
+#print(' SV/s: {0}'.format(SVs))
+#print(' Neighbouring Genes: {0}'.format(neighbours))
 print(' Threads: {0}'.format(threads))
 print(' Path To Coverage: {0}'.format(covStore))
 print(' Figure Title: {0}'.format(chromosome+':'+region if title == '' else title))
@@ -128,7 +146,7 @@ print('')
 #################
 
 print('Creating Coverage Plot')
-fig, ax = plt.subplots(nrows=len(samples), ncols=1,figsize=(figureX,figureY*len(samples)))
+fig, ax = plt.subplots(nrows=len(samples), ncols=1,figsize=(8,1.2*len(samples)))
 
 if len(samples) == 1:
 	sample = samples[0]
@@ -136,18 +154,26 @@ if len(samples) == 1:
 
 	ax.plot(covFile[1], covFile[2], lw=0.5)
 	ax.set_title(chromosome+':'+region if title == '' else title)
+	ax.set_xlim(int(regionStart), int(regionEnd))
 	ax.set_xlabel('Position (bp)')
-	ax.set_ylabel(sample)
+	if len(plots) == 0:
+		ax.set_ylabel(sample)
+	else:
+		ax.set_ylabel(plots[0])
 
-	for s in SVs:
-		start, end = s.split('-')
-		ax.axvspan(start, end, color='red', alpha=0.1)
+	SVs = SVs[(SVs.Samples.str.contains(sample))]
+
+	for _, s in SVs.iterrows():
+		start = s['Start']
+		end = s['End']
+		ax.axvspan(start, end, facecolor='orange', alpha=0.3, edgecolor='none')
 	for g in genes:
 		start, end = g.split('-')
-		ax.axvspan(start, end, color='green', alpha=0.2)
-	for n in neighbours:
-		start, end = n.split('-')
-		ax.axvspan(start, end, color='grey', alpha=0.2)
+		ax.axvspan(start, end, facecolor='green', alpha=0.2, edgecolor='none')
+	for _, n in neighbours.iterrows():
+		start = n['Start']
+		end = n['End']
+		ax.axvspan(start, end, facecolor='grey', alpha=0.2, edgecolor='none')
 	ax.axhline(y=0,color='black',lw=0.5)
 
 else:
@@ -156,21 +182,29 @@ else:
 
 		ax[i].plot(covFile[1], covFile[2], lw=0.5)
 		if i == 0: ax[i].set_title(chromosome+':'+region if title == '' else title)
+		ax[i].set_xlim(int(regionStart), int(regionEnd))
 		ax[i].set_xlabel('Position (bp)')
-		ax[i].set_ylabel(sample)
+		if len(plots) == 0:
+			ax[i].set_ylabel(sample)
+		else:
+			ax[i].set_ylabel(plots[i])
+		
+		SVs_sub = SVs[(SVs.Samples.str.contains(sample))]
 
-		for s in SVs:
-			start, end = s.split('-')
-			ax[i].axvspan(start, end, color='red', alpha=0.1)
+		for _, s in SVs_sub.iterrows():
+			start = s['Start']
+			end = s['End']
+			ax[i].axvspan(start, end, facecolor='orange', alpha=0.3, edgecolor='none')
 		for g in genes:
 			start, end = g.split('-')
-			ax[i].axvspan(start, end, color='green', alpha=0.2)
-		for n in neighbours:
-			start, end = n.split('-')
-			ax[i].axvspan(start, end, color='grey', alpha=0.2)
+			ax[i].axvspan(start, end, facecolor='green', alpha=0.2, edgecolor='none')
+		for _, n in neighbours.iterrows():
+			start = n['Start']
+			end = n['End']
+			ax[i].axvspan(start, end, facecolor='grey', alpha=0.2, edgecolor='none')
 		ax[i].axhline(y=0,color='black',lw=0.5)
 
-fig.savefig(filename+'.png', bbox_inches='tight')
+fig.savefig(filename+'.png', bbox_inches='tight', dpi=300)
 plt.close(fig)
 
 print('')
