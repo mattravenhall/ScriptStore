@@ -77,8 +77,6 @@ for (i in 1:(length(models)+1)) {
 			}
 		}
 	}
-	# abline(v=g0, lty=2, col='black')
-	# abline(v=g1, lty=2, col='black')
 }
 title(mainTitle,outer=T)
 dev.off()
