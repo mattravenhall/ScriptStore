@@ -16,4 +16,5 @@ Useful scripts without a specific home.
 
 #### Visualisation
 **makeCovPlot.py**: Coverage plot with annotation.
+
 **plotVariantHeatmap.r**: Variant heatmap with annotation.
