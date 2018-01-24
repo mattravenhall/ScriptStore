@@ -13,3 +13,7 @@ Useful scripts without a specific home.
 
 #### Format Conversion
 **vcfToSNPs.py**: For pulling raw SNP calls from a .vcf file.
+
+#### Visualisation
+**makeCovPlot.py**: Coverage plot with annotation.
+**plotVariantHeatmap.r**: Variant heatmap with annotation.
